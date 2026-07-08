@@ -1,0 +1,34 @@
+[tool.pytest.ini_options]
+# Enable asyncio mode globally so all async test functions run without
+# explicit @pytest.mark.asyncio decorators.
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+# Always show test names in verbose output.
+# -m 'not eval' excludes integration/evaluation tests from the default run
+# so `make test` stays fast. Run `make eval` to execute evaluation tests.
+addopts = "-v --tb=short -m 'not eval'"
+testpaths = ["tests"]
+markers = [
+    "eval: marks tests as RAG evaluation tests (requires running stack + Ollama)",
+]
+
+[tool.ruff.lint]
+# E — pycodestyle errors
+# F — pyflakes (undefined names, unused imports, …)
+# I — isort (import ordering)
+# UP — pyupgrade (modern Python syntax)
+# B — flake8-bugbear (common bug patterns)
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+# Allow untyped defs in test files to keep boilerplate low.
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
