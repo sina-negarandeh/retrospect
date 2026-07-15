@@ -16,11 +16,15 @@ The system is cleanly decoupled into two distinct operational phases:
 - **Embedding Generation**: Converts diary chunks into dense vector representations using `embeddinggemma` via Ollama, and sparse SPLADE vectors via `fastembed`.
 - **Vector Storage**: Indexes dense vectors, sparse SPLADE vectors, and extracted metadata filters into **Qdrant** for hybrid search retrieval.
 
+![Offline Phase](imgs/retrospect-offline.png)
+
 ### 2. Online Phase (Query & Generation)
 - **Query Rewriting**: Intercepts natural language questions, stripping conversational filler and enriching the core concepts with probable diary synonyms (e.g., from "sad" to "crying, heartbroken") while identifying deterministic metadata filters.
 - **4-Path Hybrid Retrieval**: Executes dense and sparse searches across both filtered and unfiltered result sets in a single `query_points` call, with Qdrant-native RRF fusion, eliminating multiple round-trips and pushing all fusion logic to the database layer.
 - **Small-to-Big Retrieval**: Retrieves highly specific, smaller chunks via hybrid search, but feeds their larger, complete parent documents to the LLM to provide broader context, deduplicating parent IDs on the fly.
 - **Cross-Encoder Re-ranking**: Utilizes a Cross-Encoder (`ms-marco-MiniLM-L-6-v2`) to re-rank the fused top results for maximum relevance against the rewritten query.
+
+![Online Phase](imgs/retrospect-online.png)
 
 ## Technology Stack
 
