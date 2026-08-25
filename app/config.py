@@ -90,6 +90,14 @@ class Settings(BaseSettings):
             "search strategy before retrying; 1 disables the loop entirely."
         ),
     )
+    temporal_filtering_enabled: bool = Field(
+        default=True,
+        description=(
+            "Whether LLM-emitted date bounds are applied as Qdrant range filters. "
+            "Set to false to measure the feature's contribution against a baseline; "
+            "the rewrite step still emits bounds, they are simply not applied."
+        ),
+    )
     retrieval_relevance_threshold: float = Field(
         default=0.0,
         description=(

@@ -268,6 +268,37 @@ class TestTemporalFilters:
         assert condition.range is not None
 
 
+class TestTemporalAblation:
+    """The measurement switch must drop only the date bounds."""
+
+    @pytest.mark.asyncio
+    async def test_disabling_temporal_filtering_keeps_metadata_filters(self) -> None:
+        from app.config import Settings, get_settings
+        from app.graph.nodes import rewrite_query
+
+        mock_response = MagicMock()
+        mock_response.content = (
+            '{"search_query": "garden", '
+            '"filters": {"places": ["Walheim"], "date_from": "1771-05-10", '
+            '"date_to": "1771-05-20"}}'
+        )
+        mock_response.usage_metadata = None
+
+        mock_llm = MagicMock()
+        mock_llm.ainvoke = AsyncMock(return_value=mock_response)
+
+        ablated = Settings(temporal_filtering_enabled=False)
+        with (
+            patch("app.graph.nodes._get_rewrite_llm", return_value=mock_llm),
+            patch("app.graph.nodes.get_settings", return_value=ablated),
+        ):
+            result = await rewrite_query(_make_state("Walheim in mid May 1771"))
+
+        # Dates gone, metadata filter untouched: the ablation isolates one feature.
+        assert result["filters"] == {"places": ["Walheim"]}
+        assert get_settings().temporal_filtering_enabled is True, "default must stay on"
+
+
 class TestRetrievalLoop:
     """The retrieve -> relax -> retrieve cycle and the guards that stop it."""
 

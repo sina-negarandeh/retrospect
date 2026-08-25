@@ -155,6 +155,7 @@ All knobs live in `app/config.py` and can be overridden via environment variable
 | `RETRIEVAL_FINAL_K` | `5` | Re-ranked documents handed to the generation model. |
 | `RETRIEVAL_MAX_ATTEMPTS` | `3` | Passes through the retrieval loop. **Set to `1` to disable the loop.** |
 | `RETRIEVAL_RELEVANCE_THRESHOLD` | `0.0` | Minimum cross-encoder score for a pass to count as relevant. `ms-marco-MiniLM` emits logits roughly in `-11..+11`, where `>0` indicates relevance. |
+| `TEMPORAL_FILTERING_ENABLED` | `true` | Whether LLM-emitted date bounds are applied as range filters. Set to `false` to measure the feature against a baseline. |
 
 ## Project Structure
 
@@ -171,7 +172,7 @@ All knobs live in `app/config.py` and can be overridden via environment variable
 │   └── services/         # Business logic and external service integrations
 ├── data/                 # Data directory for document ingestion
 ├── docker/               # Dockerfiles and container configurations
-├── evals/                # Evaluation configurations and scripts
+├── evals/                # Evaluation dataset (dataset.json)
 ├── tests/                # Unit and integration tests
 ├── .env.example          # Example environment variables
 ├── requirements-eval.txt # Pinned DeepEval + Ragas harnesses (installed by `make eval`)
@@ -248,6 +249,30 @@ make eval
 | 3 | **Ragas** | The same four dimensions scored across the dataset in one pass and asserted on the mean, which is the figure to quote when comparing two retrieval configurations. |
 
 Both judges run against local Ollama, so no data leaves the machine and no OpenAI key is needed. Each tier is guarded independently: a missing library skips only its own tier.
+
+### The Evaluation Set
+
+`evals/dataset.json` holds 37 question and answer pairs drawn from the entries in `data/`, every one of them grounded in a specific entry. Each is tagged with a category so results can be sliced by question type:
+
+| Category | Count | Exercises |
+| --- | --- | --- |
+| `entity` | 15 | Named people, places and objects, and so the self-query metadata filters. |
+| `temporal` | 9 | Date and time constraints, and so `date_from` / `date_to` range filtering. |
+| `topical` | 7 | Themes and emotional states, with no hard filter to fall back on. |
+| `synthesis` | 6 | Answers spanning several entries, and so small-to-big expansion and recall. |
+
+The Ragas tier reports a per-category breakdown alongside the overall means, which is what makes a feature's contribution visible: temporal filtering should move the `temporal` row without moving the others.
+
+### Measuring a Feature
+
+Retrieval settings are read inside the API process, so an ablation has to recreate the service rather than set variables on the test run. Two targets handle this:
+
+```bash
+make eval-baseline    # retrieval loop off, temporal filters not applied
+make eval-treatment   # defaults restored, full configuration
+```
+
+Comparing the two reports gives a defensible figure for what the retrieval loop and temporal filtering actually contribute, over a stated number of questions, rather than an unquantified claim.
 
 > **Note on pinning:** The evaluation dependencies are deliberately excluded from the runtime image, since `ragas` alone pulls in `openai`, `langchain-openai`, `datasets`, and `pandas`. They also require careful pinning. `ragas` declares `langchain-core` with no upper bound, so an unconstrained install silently upgrades it underneath the running service, and every published `ragas` version imports `langchain_community.chat_models.vertexai`, which `langchain-community` removed in 0.4.x. `requirements-eval.txt` pins around both and documents why.
 

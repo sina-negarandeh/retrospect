@@ -1,0 +1,234 @@
+{
+  "description": "Retrieval and generation evaluation set for the Retrospect journal corpus in data/. Every expected_output is grounded in a specific entry; nothing here is inferred or invented. Categories exist so results can be sliced by question type, which is how the temporal-filtering and retrieval-loop features are measured: a feature that only helps temporal questions will show up as a category delta, not an overall one.",
+  "default_top_k": 10,
+  "categories": {
+    "entity": "Named people, places, or objects. Exercises the self-query metadata filters.",
+    "temporal": "Phrased with a date or time constraint. Exercises date_from/date_to range filtering.",
+    "topical": "Themes, opinions, and emotional states. Exercises dense retrieval with no hard filter.",
+    "synthesis": "Requires combining two or more entries. Exercises small-to-big expansion and recall."
+  },
+  "samples": [
+    {
+      "id": "aunt-personality",
+      "category": "entity",
+      "input": "What did I say about my aunt's personality?",
+      "expected_output": "She is a lively, cheerful woman, with the best of hearts, and far from the disagreeable person our friends alleged her to be."
+    },
+    {
+      "id": "garden-creator",
+      "category": "entity",
+      "input": "Who laid out the garden on the sloping hills?",
+      "expected_output": "The late Count M."
+    },
+    {
+      "id": "philip-identity",
+      "category": "entity",
+      "input": "Who is Philip?",
+      "expected_output": "The little boy of about four years old at Walheim who was holding his baby brother between his knees while their mother went into town."
+    },
+    {
+      "id": "hans-identity",
+      "category": "entity",
+      "input": "Who is Hans?",
+      "expected_output": "The youngest child at Walheim, a baby about six months old, for whom his mother was going to make broth."
+    },
+    {
+      "id": "wilhelm-addressee",
+      "category": "entity",
+      "input": "Who was I addressing when I wrote that the life of man is but a dream?",
+      "expected_output": "Wilhelm."
+    },
+    {
+      "id": "leonora-blame",
+      "category": "entity",
+      "input": "What did I write about Leonora?",
+      "expected_output": "That he pitied her and questioned his own blamelessness, because a passion for him was engendered in her feeble heart while he was charmed by her sister."
+    },
+    {
+      "id": "young-v-impression",
+      "category": "entity",
+      "input": "What was my impression of the young V I met?",
+      "expected_output": "A frank, open fellow with a pleasing countenance, recently out of university, who displayed his whole store of learning; the narrator allowed it all to pass."
+    },
+    {
+      "id": "friend-of-youth",
+      "category": "entity",
+      "input": "What happened to the friend of my youth?",
+      "expected_output": "She died. She was a few years his senior and went to the grave before him, and he cannot forget her firm mind or her heavenly patience."
+    },
+    {
+      "id": "childrens-mother",
+      "category": "entity",
+      "input": "Who was the mother of the children at Walheim?",
+      "expected_output": "The daughter of the schoolmaster, whose husband had gone to Switzerland to collect money left to him by a relation."
+    },
+    {
+      "id": "judge-children-count",
+      "category": "entity",
+      "input": "How many children does the district judge have?",
+      "expected_output": "Nine."
+    },
+    {
+      "id": "judge-residence",
+      "category": "entity",
+      "input": "Where does the district judge live?",
+      "expected_output": "At one of the royal hunting-lodges, about an hour and a half away on foot, which he obtained leave to inhabit after the loss of his wife."
+    },
+    {
+      "id": "walheim-distance",
+      "category": "entity",
+      "input": "How far is Walheim from the town?",
+      "expected_output": "About a league."
+    },
+    {
+      "id": "walheim-innkeeper",
+      "category": "entity",
+      "input": "Who keeps the inn at Walheim?",
+      "expected_output": "A good old woman who sells wine, beer, and coffee, and is cheerful and pleasant despite her age."
+    },
+    {
+      "id": "linden-trees",
+      "category": "entity",
+      "input": "What did I write about the linden trees?",
+      "expected_output": "Two linden-trees spread their enormous branches over the little green before the church at Walheim, and they are the chief charm of the spot."
+    },
+    {
+      "id": "fountain-description",
+      "category": "entity",
+      "input": "Describe the fountain near the house.",
+      "expected_output": "Down a gentle slope there is an arch, and some twenty steps lower down water of the clearest crystal gushes from a marble rock, enclosed by a narrow wall and encircled by tall trees."
+    },
+    {
+      "id": "early-may-mood",
+      "category": "temporal",
+      "input": "What was I feeling at the very start of May 1771?",
+      "expected_output": "Happy that he is gone, though torn at leaving the friend from whom he had been inseparable, and promising he will no longer ruminate on every petty vexation but will enjoy the present."
+    },
+    {
+      "id": "may-4-mother-business",
+      "category": "temporal",
+      "input": "On May 4, what did I promise to handle for my mother?",
+      "expected_output": "Her business regarding the part of her portion that had been withheld; the aunt explained her terms and was willing to give up the whole and more."
+    },
+    {
+      "id": "before-may-15-fountain",
+      "category": "temporal",
+      "input": "What did I write about the fountain before the middle of May?",
+      "expected_output": "On May 12 he described the fountain in front of the house, the charm binding him to it like Melusina and her sisters, and the young maidens who come from town to fetch water."
+    },
+    {
+      "id": "mid-may-servant-girl",
+      "category": "temporal",
+      "input": "Around the middle of May, who did I help at the fountain?",
+      "expected_output": "A young servant-girl who had set her pitcher on the lowest step; he helped her lift it onto her head and she blushed and thanked him."
+    },
+    {
+      "id": "may-17-acquaintances",
+      "category": "temporal",
+      "input": "Who did I become acquainted with on May 17?",
+      "expected_output": "A young man called V, recently out of university, and the district judge, a frank and open-hearted man with nine children."
+    },
+    {
+      "id": "may-26-discovery",
+      "category": "temporal",
+      "input": "What place did I discover toward the end of May?",
+      "expected_output": "Walheim, a village about a league from the town, delightfully situated on the side of a hill."
+    },
+    {
+      "id": "late-may-peasant",
+      "category": "temporal",
+      "input": "In the last days of May, what did I learn about the peasant lad?",
+      "expected_output": "That he was in the service of a young widow and desperately in love with her, though she had been badly treated by her former husband and did not mean to marry again."
+    },
+    {
+      "id": "may-22-reflection",
+      "category": "temporal",
+      "input": "What was I reflecting on around May 22?",
+      "expected_output": "That the life of man is but a dream, that our energies are wasted on mere necessities, and that the man who acknowledges this vanity is at peace and preserves a sweet feeling of liberty."
+    },
+    {
+      "id": "may-13-books",
+      "category": "temporal",
+      "input": "What did I answer on May 13 when asked about sending books?",
+      "expected_output": "He beseeches his friend to relieve him from such a yoke, saying he needs no more to be guided, agitated, or heated, and that he wants strains to lull him and finds them to perfection in his Homer."
+    },
+    {
+      "id": "homer-reading",
+      "category": "topical",
+      "input": "What book do I keep returning to?",
+      "expected_output": "Homer."
+    },
+    {
+      "id": "rules-in-art",
+      "category": "topical",
+      "input": "What did I conclude about following rules in art?",
+      "expected_output": "That rules destroy the genuine feeling of nature and its true expression, and that he resolved to adhere entirely to nature, which alone is inexhaustible."
+    },
+    {
+      "id": "neglecting-talent",
+      "category": "topical",
+      "input": "Why did I say I could not draw a single stroke?",
+      "expected_output": "Because he was so absorbed in the exquisite sense of tranquil existence that he neglected his talents, and yet he felt he had never been a greater artist."
+    },
+    {
+      "id": "heart-sick-child",
+      "category": "topical",
+      "input": "How do I treat my own heart?",
+      "expected_output": "Like a sick child, gratifying its every fancy."
+    },
+    {
+      "id": "misunderstanding-vs-malice",
+      "category": "topical",
+      "input": "What did I observe causes more mischief in the world than malice?",
+      "expected_output": "Misunderstandings and neglect, which occasion more mischief than malice and wickedness, and are also more frequent."
+    },
+    {
+      "id": "town-versus-nature",
+      "category": "topical",
+      "input": "What did I think of the town itself?",
+      "expected_output": "The town itself is disagreeable, but all around it there is an inexpressible beauty of nature."
+    },
+    {
+      "id": "common-people-attitude",
+      "category": "topical",
+      "input": "What are my views on keeping distance from common people?",
+      "expected_output": "That whoever avoids the common people in order not to lose their respect is as much to blame as a coward who hides from his enemy because he fears defeat."
+    },
+    {
+      "id": "emotional-volatility",
+      "category": "synthesis",
+      "input": "Have I noticed any pattern in how my moods change?",
+      "expected_output": "Yes, he describes sudden transitions from sorrow to immoderate joy and from sweet melancholy to violent passions, calling his heart unsteady and uncertain."
+    },
+    {
+      "id": "kindness-to-children",
+      "category": "synthesis",
+      "input": "How do I treat the village children?",
+      "expected_output": "He gives each a lump of sugar when he drinks his coffee, shares his milk and bread and butter in the evening, and they receive a kreutzer on Sundays."
+    },
+    {
+      "id": "walheim-return",
+      "category": "synthesis",
+      "input": "Why do I keep going back to Walheim?",
+      "expected_output": "For its retired and peaceable character, the two linden-trees before the church, the little inn where he drinks coffee and reads Homer, and the children he has befriended there."
+    },
+    {
+      "id": "solitude-and-nature",
+      "category": "synthesis",
+      "input": "What does solitude in nature do for me?",
+      "expected_output": "It is a genial balm to his mind; alone among the grass, stream, and insects he feels the presence of the Almighty and an overwhelming serenity."
+    },
+    {
+      "id": "drawing-subjects",
+      "category": "synthesis",
+      "input": "What have I drawn or sketched since arriving?",
+      "expected_output": "He sketched the two children at Walheim, the little boy holding the baby, adding the neighbouring hedge, the barn-door, and some broken cart-wheels, and later sat by the same plough again."
+    },
+    {
+      "id": "observing-lovers",
+      "category": "synthesis",
+      "input": "What did I decide about meeting the widow the peasant loves?",
+      "expected_output": "That it was better not to see her, and to behold her instead through the eyes of her lover, rather than destroy so sweet a picture."
+    }
+  ]
+}

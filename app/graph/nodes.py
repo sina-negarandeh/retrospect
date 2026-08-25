@@ -156,7 +156,14 @@ async def rewrite_query(state: RetrospectState) -> dict[str, Any]:
         # off-vocabulary or malformed filter silently matches zero points.
         translated = TranslatedQuery.model_validate(content)
         rewritten = translated.search_query.strip() or query
-        filters = translated.filters.to_query_filters() or None
+
+        query_filters = translated.filters.to_query_filters()
+        if not settings.temporal_filtering_enabled:
+            # Ablation switch for measurement: drop the date bounds while
+            # leaving the metadata filters untouched.
+            query_filters.pop("date_from", None)
+            query_filters.pop("date_to", None)
+        filters = query_filters or None
 
     except Exception:
         # Log the failure so degraded retrieval is visible in traces.

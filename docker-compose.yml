@@ -57,6 +57,12 @@ services:
       MLFLOW_TRACKING_URI: http://mlflow:5000
       HF_TOKEN: ${HF_TOKEN}
       QDRANT_URL: http://qdrant:6333
+      # Retrieval knobs, surfaced so an evaluation baseline can be run without
+      # editing this file. Settings are read inside the API process, so they
+      # must be set here rather than on the pytest invocation.
+      RETRIEVAL_MAX_ATTEMPTS: ${RETRIEVAL_MAX_ATTEMPTS:-3}
+      TEMPORAL_FILTERING_ENABLED: ${TEMPORAL_FILTERING_ENABLED:-true}
+      RETRIEVAL_RELEVANCE_THRESHOLD: ${RETRIEVAL_RELEVANCE_THRESHOLD:-0.0}
     ports:
       - "8000:8000"
 

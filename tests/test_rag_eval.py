@@ -17,8 +17,10 @@ run them with ``make eval`` against a live stack.
 
 from __future__ import annotations
 
+import json
 import os
 from functools import cache
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -130,20 +132,24 @@ class _OllamaJudge(DeepEvalBaseLLM):  # type: ignore[misc, valid-type]
 
 # Evaluation dataset
 
-_EVAL_SAMPLES = [
-    {
-        "id": "aunt-personality",
-        "input": "What did I say about my aunt's personality?",
-        "expected_output": "She is a lively, cheerful woman, with the best of hearts.",
-        "top_k": 10,
-    },
-    {
-        "id": "garden-creator",
-        "input": "Who laid out the garden on the sloping hills?",
-        "expected_output": "The late Count M.",
-        "top_k": 10,
-    },
-]
+# Loaded from evals/dataset.json rather than inlined, so the question set can be
+# extended or sliced without touching test code. Resolved relative to this file
+# so the path holds regardless of the working directory pytest is invoked from.
+_DEFAULT_DATASET = Path(__file__).resolve().parent.parent / "evals" / "dataset.json"
+_DATASET_PATH = Path(os.getenv("EVAL_DATASET", str(_DEFAULT_DATASET)))
+
+
+def _load_samples() -> list[dict[str, Any]]:
+    """Read the evaluation set, applying the file-level default top_k."""
+    data = json.loads(_DATASET_PATH.read_text(encoding="utf-8"))
+    default_top_k = data.get("default_top_k", 10)
+    samples = data["samples"]
+    for sample in samples:
+        sample.setdefault("top_k", default_top_k)
+    return samples
+
+
+_EVAL_SAMPLES = _load_samples()
 
 
 # Helper
@@ -273,7 +279,13 @@ def test_rag_pipeline_ragas() -> None:
     )
 
     scores = result.to_pandas()
-    print("\nRagas scores:\n" + scores[list(_RAGAS_THRESHOLDS)].to_string(index=False))
+    scores["category"] = [s["category"] for s in _EVAL_SAMPLES]
+
+    metrics = list(_RAGAS_THRESHOLDS)
+    print("\nRagas scores by question category:")
+    print(scores.groupby("category")[metrics].mean().round(3).to_string())
+    print("\nOverall:")
+    print(scores[metrics].mean().round(3).to_string())
 
     failures: list[str] = []
     for metric, threshold in _RAGAS_THRESHOLDS.items():
