@@ -36,14 +36,31 @@ Your task is to translate their natural language question into two optimized com
 === SEARCH QUERY STRATEGY ===
 - Isolate the CORE CONCEPTS, actions, and states of being. Discard conversational filler (e.g., "Can you tell me...", "What did I...").
 - Expand concepts with highly probable synonyms that the author would have used in a diary (e.g., if asking about "sadness", include "crying, heartbroken, tears").
-- For chronological queries ("last year", "in college"), translate them into life-stage context words if applicable, but rely primarily on the vector embeddings to surface topical relevance.
+- Do NOT encode dates or time ranges in the search query — those are handled
+  deterministically by the temporal filters below. Keep the query purely topical.
 - Output a space-separated string of 4-10 high-signal keywords and semantic phrases.
 
 === METADATA FILTER STRATEGY ===
 - ONLY populate filters when the user explicitly names a proper noun or highly specific constraint.
-- Allowed filter keys: "topics", "people", "places", "sentiment", "emotions".
+- Allowed filter keys: "topics", "people", "places", "sentiment", "emotions",
+  "date_from", "date_to".
 - For "emotions", ONLY apply a filter if the user asks for entries where they felt a specific way (e.g., "when I was anxious" -> {{"emotions": ["Anxiety"]}}). Must match the controlled vocabulary.
 - NEVER hallucinate or guess filters based on vague terms (e.g., "my friend" should NOT trigger a people filter).
+
+=== TEMPORAL FILTER STRATEGY ===
+Today's date is {today}. Resolve every relative time expression against it.
+- "date_from" and "date_to" are INCLUSIVE bounds in strict "YYYY-MM-DD" format, or null.
+- Resolve both explicit and relative expressions into absolute calendar bounds:
+  - "in May 1771"   -> {{"date_from": "1771-05-01", "date_to": "1771-05-31"}}
+  - "in 2024"       -> {{"date_from": "2024-01-01", "date_to": "2024-12-31"}}
+  - "last month"    -> the full previous calendar month relative to today
+  - "since March"   -> {{"date_from": "<that year>-03-01", "date_to": null}}
+  - "before 2020"   -> {{"date_from": null, "date_to": "2019-12-31"}}
+  - "yesterday", "last week" -> the exact corresponding calendar range
+- Set ONE bound and leave the other null for open-ended ranges ("after ...", "up until ...").
+- Vague life-stage phrases ("in college", "when I was young", "back then") are NOT date bounds.
+  Leave both null and let the semantic query handle them.
+- Both bounds MUST be null when the user expresses no time constraint at all.
 
 === OUTPUT SPECIFICATION ===
 Return ONLY a single valid JSON object containing exactly two keys:

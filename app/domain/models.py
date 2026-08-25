@@ -14,12 +14,18 @@ Design decisions:
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
+from app.date_utils import coerce_date
 from app.domain.enums import ConversationStatus, MessageRole
+
+# Controlled vocabulary the extraction prompt constrains the model to. Query
+# filters are matched against stored payloads exactly, so a filter value that
+# is off-vocabulary (or miscased) can only ever match zero points.
+ALLOWED_SENTIMENTS = frozenset({"Positive", "Negative", "Neutral", "Mixed"})
 
 # Value objects (immutable)
 
@@ -132,22 +138,107 @@ class JournalMetadata(BaseModel):
 
 
 class MetadataFilters(BaseModel):
-    """Filters extracted from a user query."""
+    """Filters extracted from a user query.
+
+    Every value here originates from an LLM, so the ``mode="before"`` validator
+    sanitises field by field and *drops* what it cannot use rather than raising.
+    A single malformed date must not discard an otherwise usable people filter.
+    """
 
     topics: list[str] = Field(default_factory=list)
     people: list[str] = Field(default_factory=list)
     places: list[str] = Field(default_factory=list)
     sentiment: str | None = None
     emotions: list[str] = Field(default_factory=list)
+    date_from: date | None = Field(
+        default=None, description="Inclusive lower bound on the entry date."
+    )
+    date_to: date | None = Field(
+        default=None, description="Inclusive upper bound on the entry date."
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _sanitize(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+
+        cleaned: dict[str, Any] = {}
+
+        for key in ("topics", "people", "places", "emotions"):
+            raw = data.get(key)
+            if isinstance(raw, str):  # tolerate a bare string for a list field
+                raw = [raw]
+            if not isinstance(raw, list):
+                continue
+            values = [str(v).strip() for v in raw if isinstance(v, str | int | float)]
+            values = [v for v in values if v]
+            if key == "emotions":
+                # Stored emotions are title-cased; exact-match filters must agree.
+                values = [v.title() for v in values]
+            cleaned[key] = values
+
+        sentiment = data.get("sentiment")
+        if isinstance(sentiment, str) and sentiment.strip().capitalize() in ALLOWED_SENTIMENTS:
+            cleaned["sentiment"] = sentiment.strip().capitalize()
+
+        for key in ("date_from", "date_to"):
+            parsed = coerce_date(data.get(key))
+            if parsed is not None:
+                cleaned[key] = parsed
+
+        return cleaned
+
+    @model_validator(mode="after")
+    def _order_date_bounds(self) -> MetadataFilters:
+        """Swap inverted bounds so a reversed range still matches something."""
+        if self.date_from and self.date_to and self.date_from > self.date_to:
+            self.date_from, self.date_to = self.date_to, self.date_from
+        return self
+
+    def to_query_filters(self) -> dict[str, Any]:
+        """Project into the plain dict the vector store consumes, dropping empties.
+
+        Dates are emitted as ISO strings so the filter set stays JSON-serialisable
+        for graph state and MLflow spans.
+        """
+        payload: dict[str, Any] = {}
+        for key in ("topics", "people", "places", "emotions"):
+            values: list[str] = getattr(self, key)
+            if values:
+                payload[key] = values
+        if self.sentiment:
+            payload["sentiment"] = self.sentiment
+        if self.date_from:
+            payload["date_from"] = self.date_from.isoformat()
+        if self.date_to:
+            payload["date_to"] = self.date_to.isoformat()
+        return payload
 
 
 class TranslatedQuery(BaseModel):
     """The result of query translation."""
 
-    search_query: str = Field(description="The optimized semantic search query")
-    filters: MetadataFilters = Field(
-        description="Explicit metadata filters extracted from the user's request"
+    search_query: str = Field(
+        default="", description="The optimized semantic search query"
     )
+    filters: MetadataFilters = Field(
+        default_factory=MetadataFilters,
+        description="Explicit metadata filters extracted from the user's request",
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce(cls, data: Any) -> Any:
+        """Tolerate a missing or wrong-typed key rather than losing the whole rewrite."""
+        if not isinstance(data, dict):
+            return data
+        search_query = data.get("search_query")
+        filters = data.get("filters")
+        return {
+            "search_query": search_query if isinstance(search_query, str) else "",
+            "filters": filters if isinstance(filters, dict) else {},
+        }
 
 
 class Document(BaseModel):

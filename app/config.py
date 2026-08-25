@@ -69,6 +69,36 @@ class Settings(BaseSettings):
         description="Hugging Face model ID for the tokenizer.",
     )
 
+    # Retrieval
+    retrieval_top_k: int = Field(
+        default=20,
+        description="Candidate pool size fetched from Qdrant per retrieval attempt.",
+    )
+    retrieval_broad_top_k: int = Field(
+        default=40,
+        description="Wider candidate pool used by the final, broadened retrieval attempt.",
+    )
+    retrieval_final_k: int = Field(
+        default=5,
+        description="Number of re-ranked documents handed to the generation model.",
+    )
+    retrieval_max_attempts: int = Field(
+        default=3,
+        ge=1,
+        description=(
+            "Maximum passes through the retrieval loop. Each failed pass relaxes the "
+            "search strategy before retrying; 1 disables the loop entirely."
+        ),
+    )
+    retrieval_relevance_threshold: float = Field(
+        default=0.0,
+        description=(
+            "Minimum cross-encoder score the best candidate must reach for the result "
+            "set to count as relevant. Below it, the retrieval loop relaxes and retries. "
+            "ms-marco-MiniLM logits are roughly -11..+11, with >0 indicating relevance."
+        ),
+    )
+
     # MLflow
     mlflow_tracking_uri: str = Field(
         default="http://mlflow:5000",

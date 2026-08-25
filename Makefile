@@ -9,7 +9,7 @@
 #   make lint       — Run ruff check + mypy.
 #   make format     — Auto-format code with ruff.
 #   make test       — Run unit tests (fast, no Ollama or live API needed).
-#   make eval       — Run RAG evaluation tests (requires running stack + Ollama).
+#   make eval       — Run DeepEval + Ragas evaluation (requires running stack + Ollama).
 #   make clean      — Remove all local tooling caches.
 
 .PHONY: up down down-clean dev logs lint format test eval clean
@@ -39,8 +39,9 @@ test:
 	docker exec retrospect-rag-api-1 python -m pytest tests/ -m 'not eval' -v
 
 eval:
-	@echo "Installing deepeval and ragas inside the api container..."
-	docker exec retrospect-rag-api-1 pip install -q 'pyarrow<21.0.0' 'deepeval>=1.4.0' 'ragas>=0.1.7'
+	@echo "Installing the DeepEval + Ragas harnesses inside the api container..."
+	docker cp requirements-eval.txt retrospect-rag-api-1:/tmp/requirements-eval.txt
+	docker exec retrospect-rag-api-1 pip install -q -r /tmp/requirements-eval.txt
 	@echo "Running RAG evaluation tests..."
 	docker exec -e DEEPEVAL_PER_TASK_TIMEOUT_SECONDS_OVERRIDE=1800 -e DEEPEVAL_TASK_GATHER_BUFFER_SECONDS_OVERRIDE=300 retrospect-rag-api-1 python -m pytest tests/test_rag_eval.py -m eval -v
 

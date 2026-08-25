@@ -1,0 +1,23 @@
+# Evaluation-only dependencies, installed on demand by `make eval`.
+#
+# Deliberately kept out of requirements.txt: ragas alone pulls in openai,
+# langchain-openai, datasets and pandas, none of which the service needs to
+# answer a query. Keeping them here keeps the runtime image lean.
+#
+# Guard pin. ragas declares langchain-core with NO upper bound, so an
+# unconstrained install silently upgrades it underneath the running service
+# (verified: 1.4.0 -> 1.6.0). Must match the pin in requirements.txt.
+langchain-core==1.4.0
+
+deepeval==4.2.0
+ragas==0.3.0
+
+# ragas (every version, up to and including 0.4.x) imports
+# langchain_community.chat_models.vertexai, which langchain-community removed
+# in 0.4.x. 0.3.31 is the newest release that still ships that module *and*
+# still accepts langchain-core 1.x — without this pin, `import ragas` raises
+# ModuleNotFoundError.
+langchain-community==0.3.31
+
+# Pin pyarrow to avoid conflicts with mlflow 3.1.0 and deepeval
+pyarrow<21.0.0,>=4.0.0
