@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
     && echo "source /opt/venv/bin/activate" >> ~/.bashrc
 
-COPY requirements.txt requirements-dev.txt ./
+COPY requirements.txt requirements-dev.txt requirements-eval.txt ./
 RUN pip install --upgrade pip \
     && pip install -r requirements-dev.txt
 

@@ -3,12 +3,14 @@ from __future__ import annotations
 import logging
 import uuid
 from pathlib import Path
+from typing import Any
 
 from huggingface_hub import hf_hub_download
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from tokenizers import Tokenizer
 
 from app.config import get_settings
+from app.date_utils import DATE_PAYLOAD_FIELD, coerce_date, to_epoch_seconds
 from app.domain.models import Chunk, Document
 
 logger = logging.getLogger(__name__)
@@ -42,14 +44,25 @@ class DocumentProcessor:
         for file_path in directory.glob("**/*.md"):
             try:
                 content = file_path.read_text(encoding="utf-8")
-                doc = Document(
-                    id=file_path.name,
-                    content=content,
-                    metadata={
-                        "source_path": str(file_path),
-                        "date": file_path.stem,
-                    },
-                )
+                metadata: dict[str, Any] = {
+                    "source_path": str(file_path),
+                    "date": file_path.stem,
+                }
+
+                # Entries are named by their ISO date. Store an epoch-seconds
+                # twin alongside the human-readable string so Qdrant can serve
+                # range queries on it; a non-date filename simply stays
+                # unfilterable rather than failing ingestion.
+                entry_date = coerce_date(file_path.stem)
+                if entry_date is not None:
+                    metadata[DATE_PAYLOAD_FIELD] = to_epoch_seconds(entry_date)
+                else:
+                    logger.warning(
+                        "Filename %s is not an ISO date — entry will not be date-filterable.",
+                        file_path.name,
+                    )
+
+                doc = Document(id=file_path.name, content=content, metadata=metadata)
                 documents.append(doc)
             except Exception as e:
                 logger.error(f"Error reading file {file_path}: {e}")

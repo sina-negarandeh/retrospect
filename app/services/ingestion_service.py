@@ -31,6 +31,8 @@ async def _drop_and_recreate_collection() -> None:
     from qdrant_client import AsyncQdrantClient
     from qdrant_client.http import models as rest
 
+    from app.services.vector_store import ensure_payload_indexes
+
     settings = get_settings()
     client = AsyncQdrantClient(url=settings.qdrant_url)
 
@@ -57,6 +59,7 @@ async def _drop_and_recreate_collection() -> None:
             "sparse": rest.SparseVectorParams()
         },
     )
+    await ensure_payload_indexes(client, settings.qdrant_collection_name)
     logger.info(
         "Collection %s recreated with dense dim=%d and sparse vectors.",
         settings.qdrant_collection_name,

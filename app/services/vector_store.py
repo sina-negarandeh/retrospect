@@ -10,10 +10,49 @@ from qdrant_client.http import models as rest
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 
 from app.config import get_settings
+from app.date_utils import DATE_PAYLOAD_FIELD, coerce_date, to_epoch_seconds
 from app.domain.models import Chunk
 from app.services.embedding_service import get_embeddings_model, get_sparse_embeddings_model
 
 logger = logging.getLogger(__name__)
+
+
+async def ensure_payload_indexes(client: AsyncQdrantClient, collection_name: str) -> None:
+    """Create the payload indexes the query filters depend on.
+
+    Idempotent: re-creating an existing index is a no-op, so this is safe to
+    call on every startup, including against collections indexed before the
+    date field existed.
+    """
+    try:
+        await client.create_payload_index(
+            collection_name=collection_name,
+            field_name=DATE_PAYLOAD_FIELD,
+            field_schema=rest.PayloadSchemaType.INTEGER,
+        )
+    except Exception:
+        logger.debug(
+            "Payload index on %s already present or could not be created.",
+            DATE_PAYLOAD_FIELD,
+            exc_info=True,
+        )
+
+
+def _build_date_range(filters: dict[str, Any]) -> rest.Range | None:
+    """Translate ``date_from`` / ``date_to`` into a Qdrant numeric range.
+
+    Entries are stored at UTC midnight, so an entry dated exactly ``date_to``
+    encodes to precisely that bound — ``lte`` is therefore inclusive of the
+    whole final day without any end-of-day fudging.
+    """
+    lower = coerce_date(filters.get("date_from"))
+    upper = coerce_date(filters.get("date_to"))
+    if lower is None and upper is None:
+        return None
+    return rest.Range(
+        gte=to_epoch_seconds(lower) if lower is not None else None,
+        lte=to_epoch_seconds(upper) if upper is not None else None,
+    )
 
 
 class VectorStore:
@@ -65,6 +104,7 @@ class VectorStore:
                     dimension,
                 )
 
+            await ensure_payload_indexes(self.client, self.collection_name)
             self._initialized = True
 
         except Exception as e:
@@ -260,6 +300,11 @@ class VectorStore:
                         rest.FieldCondition(
                             key="sentiment", match=rest.MatchValue(value=filters["sentiment"])
                         )
+                    )
+                date_range = _build_date_range(filters)
+                if date_range is not None:
+                    must_conditions.append(
+                        rest.FieldCondition(key=DATE_PAYLOAD_FIELD, range=date_range)
                     )
                 if must_conditions:
                     qdrant_filter = rest.Filter(must=must_conditions)
