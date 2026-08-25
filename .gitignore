@@ -1,0 +1,38 @@
+# Secrets. `cp .env.example .env` is the first setup step in the README, and the
+# result holds HF_TOKEN and ADMIN_TOKEN. The example file itself stays tracked.
+.env
+.env.*
+!.env.example
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Tooling caches (mirrors the `clean` target in the Makefile)
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# MLflow falls back to a local ./mlruns store whenever the tracking server is
+# unreachable, which is the case any time tests run outside the container.
+mlruns/
+mlartifacts/
+
+# Local virtualenvs
+.venv/
+venv/
+env/
+
+# Packaging artifacts
+*.egg-info/
+dist/
+build/
+
+# Editor and OS cruft
+.DS_Store
+.idea/
+.vscode/
